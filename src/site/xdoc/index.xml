@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+ <!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<document>
+
+ <properties>
+  <title>Overview</title>
+  <author email="dev@commons.apache.org">Commons Documentation Team</author>
+ </properties>
+
+ <body>
+
+<section name="Commons Convert">
+
+<p>
+<b>Convert</b> is a library dedicated to the task of converting
+an object of one type to another. The library is ideal for scripting languages
+or any application that needs to convert (or coerce) one Java object type to another.
+</p>
+
+<subsection name="Goals">
+<p>
+ <ul>
+  <li>Provide a simple API for converting one arbitrary Java object into another</li>
+  <li>Provide a comprehensive library of converters</li>
+  <li>Support locale-sensitive conversions for internationalization</li>
+  <li>Accommodate the conversion of application-defined types</li>
+ </ul>
+</p>
+</subsection>
+
+<subsection name="Status">
+<p>
+ <ul>
+  <li>This code is in the commons <i>sandbox</i></li>
+  <li>The code is unreleased</li>
+  <li>The API can be considered stable</li>
+  <li>The library needs unit tests</li>
+  <li>If you like the code and want to push it toward a release, then please join the mailing list!</li>
+ </ul>
+</p>
+</subsection>
+</section>
+
+<section name="Getting Started">
+<p>
+Most Java applications will require data type conversion, and typically those conversions are hard-coded in
+the application on an as-needed basis. As an application grows, so do the number of hard-coded conversions. In time,
+you end up with duplicate code or duplicate conversions that behave differently depending on where they appear in code.
+Things get worse in enterprise-class applications where data is being exchanged between dissimilar systems
+and data type conversion gets really complicated.
+</p>
+<p>
+A better approach would be to start off with a conversion library like <b>Commons Convert</b> that will
+accommodate the handful of conversions required by a small application, as well as the complicated,
+difficult-to-foresee conversions required by an enterprise-class application. The easiest and most scalable
+way to set up conversions is to create a facade or adapter:<br/><br/>
+<code>
+public static Object convertTo(Object sourceObject, Class&lt;?&gt; targetClass) throws ClassNotFoundException, ConversionException {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;Converter&lt;Object, Object&gt; converter = Converters.getConverter(sourceObject.getClass(), targetClass);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;return converter.convert(sourceObject);<br/>
+}
+</code><br/><br/>
+The application delegates all conversions to the static method.
+</p>
+<p>
+Some conversions require a locale and/or time zone. The facade can be improved to accommodate
+localized conversions:<br/><br/>
+<code>
+public static Object convertTo(Object sourceObject, Class&lt;?&gt; targetClass, Locale locale, TimeZone timezone) throws ClassNotFoundException, ConversionException {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;Converter&lt;Object, Object&gt; converter = Converters.getConverter(sourceObject.getClass(), targetClass);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;if (converter instanceof LocalizedConverter) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LocalizedConverter&lt;Object, Object&gt; localizedConverter = (LocalizedConverter) converter;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return localizedConverter.convert(sourceObject, locale, timeZone);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;} else {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return converter.convert(sourceObject);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</code>
+</p>
+</section>
+
+<section name="Documentation">
+<p>
+ <ul>
+  <li>The <a href="apidocs/index.html">Javadoc</a> of the latest SVN</li>
+  <li>The <a href="http://svn.apache.org/viewvc/commons/sandbox/convert/">SVN repository</a> can be browsed.</li>
+ </ul>
+</p>
+</section>
+
+<section name="Releases">
+<p>
+None. This is a <i>sandbox</i> component.
+</p>
+</section>
+
+</body>
+</document>
+
