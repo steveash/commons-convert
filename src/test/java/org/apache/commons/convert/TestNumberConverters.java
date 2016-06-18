@@ -49,7 +49,7 @@ public class TestNumberConverters extends TestCase {
                     assertEquals(label + " reflection converted", source, reflectiveConverter.convert(result));
                     LocalizedConverter<Object, S> localizedReflectiveConverter = (LocalizedConverter) reflectiveConverter;
                     assertEquals(label + " localized reflection converted", source, localizedReflectiveConverter.convert(localizedResult, Locale.getDefault(), null));
-                } catch (ClassNotFoundException e) {
+                } catch (UnconvertableException e) {
                     System.out.println(converter.getClass() + " not reflective");
                 }
             } catch (ClassCastException e) {}

@@ -40,7 +40,7 @@ public class TestCollectionConverters extends TestCase {
             Converter<Collection<?>, S> reflectiveConverter = (Converter<Collection<?>, S>) Converters.getConverter(targetClass, sourceClass);
             assertEquals(label + " reflection converted", sourceClass, reflectiveConverter.convert(result).getClass());
             assertTrue(label + " can convert", reflectiveConverter.canConvert(targetClass, sourceClass));
-        } catch (ClassNotFoundException e) {
+        } catch (UnconvertableException e) {
             System.out.println(converter.getClass() + " not reflective");
         }
     }

@@ -45,7 +45,7 @@ public class TestDateTimeConverters extends TestCase {
         try {
             reflectiveConverter = (Converter<T, S>) Converters.getConverter(target.getClass(), source.getClass());
             assertEquals(label + " reflection converted", source, reflectiveConverter.convert(target));
-        } catch (ClassNotFoundException e) {
+        } catch (UnconvertableException e) {
             System.out.println(converter.getClass() + " is not reflective");
         }
         try {

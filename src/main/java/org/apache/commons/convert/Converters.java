@@ -20,7 +20,6 @@ package org.apache.commons.convert;
 
 import java.lang.reflect.Modifier;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,8 +46,8 @@ import javax.imageio.spi.ServiceRegistry;
 public class Converters {
     protected static final String DELIMITER = "->";
     protected static final ConcurrentHashMap<String, Converter<?, ?>> converterMap = new ConcurrentHashMap<String, Converter<?, ?>>();
-    protected static final Set<ConverterCreator> creators = Collections.synchronizedSet(new HashSet<ConverterCreator>());
-    protected static final Set<String> noConversions = Collections.synchronizedSet(new HashSet<String>());
+    protected static final Set<ConverterCreator> creators = Collections.newSetFromMap(new ConcurrentHashMap<ConverterCreator, Boolean>());
+    protected static final Set<String> noConversions = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
     static {
         registerCreator(new PassThruConverterCreator());
@@ -66,11 +65,57 @@ public class Converters {
 
     private Converters() {}
 
+    /**
+     * Returns true or false indicating whether or not any converter is able to convert between
+     * <code>sourceClass</code> and <code>targetClass</code>
+     * @param sourceClass The type to convert from
+     * @param targetClass The type to convert to
+     * @return true if a converter exists that can convert this
+     */
+    public static boolean canConvert(Class<?> sourceClass, Class<?> targetClass) {
+        Converter<?, ?> result = getConverterOrNull(sourceClass, targetClass);
+        return result != null;
+    }
+
+    /**
+     * Converts the given source value to the <code>targetClass</code> if possible and throws
+     * an exception if anything goes wrong
+     * @param source source object instance to convert
+     * @param targetClass the target class to which you wish to convert <code>source</code>
+     * @param <S> source type
+     * @param <T> target type
+     * @return the coverter value of type <code>T</code>
+     * @throws UnconvertableException if no <code>Converter</code> exists that can convert this
+     * @throws ConversionException if the registered <code>Converter</code> fails to convert the source
+     */
+    public static <S, T> T convert(S source, Class<T> targetClass) throws UnconvertableException, ConversionException {
+        Converter<S, T> converter = Util.cast(getConverter(source.getClass(), targetClass));
+        return converter.convert(source);
+    }
+
+    /**
+     * Converts the given source object to <code>targetClass</code>. If no converter exists or
+     * if the selected converter fails to convert for some reason (malformed, invalid source object)
+     * then this method will return the <code>defaultValue</code> instead
+     * @param source the source object to convert
+     * @param defaultValue the default value to return should anything go wrong
+     * @param targetClass the target type to which you wish to convert
+     * @param <S> source type
+     * @param <T> target type
+     * @return the coverted value or <code>defaultValue</code> if anything goes wrong
+     */
+    public static <S, T> T convert(S source, T defaultValue, Class<T> targetClass) {
+        try {
+            return convert(source, targetClass);
+        } catch (ConversionException e) {
+            return defaultValue;
+        }
+    }
 
     /** Returns an appropriate <code>Converter</code> instance for
      * <code>sourceClass</code> and <code>targetClass</code>. If no matching
      * <code>Converter</code> is found, the method throws
-     * <code>ClassNotFoundException</code>.
+     * <code>UnconvertableException</code>.
      *
      * <p>This method is intended to be used when the source or
      * target <code>Object</code> types are unknown at compile time.
@@ -80,10 +125,18 @@ public class Converters {
      * @param sourceClass The object class to convert from
      * @param targetClass The object class to convert to
      * @return A matching <code>Converter</code> instance
-     * @throws ClassNotFoundException
+     * @throws UnconvertableException if no converter exists
      */
-    public static <S, T> Converter<S, T> getConverter(Class<S> sourceClass, Class<T> targetClass) throws ClassNotFoundException {
-        String key = sourceClass.getName().concat(DELIMITER).concat(targetClass.getName());
+    public static <S, T> Converter<S, T> getConverter(Class<S> sourceClass, Class<T> targetClass) throws UnconvertableException {
+        Converter<S, T> maybe = getConverterOrNull(sourceClass, targetClass);
+        if (maybe == null) {
+            throw UnconvertableException.makeNoConverterExists(sourceClass, targetClass);
+        }
+        return maybe;
+    }
+
+    private static <S, T> Converter<S, T> getConverterOrNull(Class<S> sourceClass, Class<T> targetClass) {
+        String key = makeLookupKey(sourceClass, targetClass);
         OUTER:
             do {
                 Converter<?, ?> result = converterMap.get(key);
@@ -91,7 +144,7 @@ public class Converters {
                     return Util.cast(result);
                 }
                 if (noConversions.contains(key)) {
-                    throw new ClassNotFoundException("No converter found for " + key);
+                    return null;
                 }
                 Class<?> foundSourceClass = null;
                 Converter<?, ?> foundConverter = null;
@@ -119,9 +172,11 @@ public class Converters {
                     }
                 }
                 noConversions.add(key);
-                throw new ClassNotFoundException("No converter found for " + key);
+                return null;
             } while (true);
     }
+
+    private static <S, T> String makeLookupKey(Class<S> sourceClass, Class<T> targetClass) {return sourceClass.getName().concat(DELIMITER).concat(targetClass.getName());}
 
     private static <S, SS extends S, T, TT extends T> Converter<SS, TT> createConverter(ConverterCreator creater, Class<SS> sourceClass, Class<TT> targetClass) {
         return creater.createConverter(sourceClass, targetClass);

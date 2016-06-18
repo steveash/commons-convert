@@ -73,11 +73,11 @@ public class TestMisc extends TestCase {
         Converter<BigDecimal, URL> notFound = null;
         try {
             notFound = Converters.getConverter(BigDecimal.class, URL.class);
-        } catch (ClassNotFoundException e) {}
+        } catch (UnconvertableException e) {}
         assertEquals("Converter not found", null, notFound);
         try {
             notFound = Converters.getConverter(BigDecimal.class, URL.class);
-        } catch (ClassNotFoundException e) {}
+        } catch (UnconvertableException e) {}
         assertEquals("Converter not found", null, notFound);
     }
 
